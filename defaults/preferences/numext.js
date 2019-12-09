@@ -6,4 +6,5 @@ pref("extensions.numext.aliasColord", "GoldenRod");
 pref("extensions.numext.aliasColore", "Khaki");
 pref("extensions.numext.numSeperator", "");
 pref("extensions.numext.numAssistant", "on");
+pref("extensions.numext.numRelativeNumbering", "on");
 pref("extensions.numext.numNumb", "on");

@@ -1,6 +1,8 @@
 var numExt =
 {
 	checkExeBox : 0,
+
+	curTab : 0,
 	
 	curTabs : "",
 	
@@ -17,6 +19,8 @@ var numExt =
 	regkey: "",
 	
 	numAssistant : "",
+
+	numRelativeNumbering: "",
 	
 	oldSep: null,
 	
@@ -26,11 +30,12 @@ var numExt =
 		var numExtPrefNumb = Components.classes["@mozilla.org/preferences-service;1"].getService (Components.interfaces.nsIPrefService);
 		numExtPrefNumb =  numExtPrefNumb.getBranch ("extensions.numext.");
 		numExt.numNumb = numExtPrefNumb.getCharPref("numNumb");	
+        numExt.numRelativeNumbering = numExtPrefNumb.getCharPref("numRelativeNumbering");
 		
 		var statuslb = document.getElementById("statuslb");
 		statuslb.setAttribute( 'value', 'NumExt (' + numExt.numNumb + ')');
 		
-		if (numExt.numNumb == "on")
+		if (numExt.numNumb == "on" || numExt.numRelativeNumbering == "on")
 		{
 			var content = document.getElementById("content");
 			numExt.curTabs = content.mTabs;
@@ -52,11 +57,44 @@ var numExt =
 		
 			numExt.regkey = new RegExp(numExt.stringRegex);
 			var doc = null;
-			for (var i = 0; i < numExt.curTabsCount; i++) 
-			{ 
-				doc = numExt.curTabs[i].label.replace(numExt.regkey, '');
-				numExt.curTabs[i].label = (i + 1) + numExt.numSeperator + "  " + doc;
-			}
+
+            if (numExt.numRelativeNumbering == "off")
+            {
+                for (var i = 0; i < numExt.curTabsCount; i++) 
+                { 
+                    doc = numExt.curTabs[i].label.replace(numExt.regkey, '');
+                    numExt.curTabs[i].label = (i + 1) + numExt.numSeperator + "  " + doc;
+                }
+            }
+            else
+            {
+                numExt.curTab = gBrowser.mCurrentTab._tPos;
+                var i = numExt.curTab;
+                for (var j = 0; j < numExt.curTabsCount; j++) 
+                {
+                    doc = numExt.curTabs[j].label.replace(numExt.regkey, '');
+                    if (j == numExt.curTab)
+                    {
+                        if (numExt.numNumb == "on")
+                        {
+                            numExt.curTabs[j].label = (numExt.curTab + 1) + numExt.numSeperator + "  " + doc;
+                        }
+                        else
+                        {
+                            numExt.curTabs[j].label = 0 + numExt.numSeperator + "  " + doc;
+                        }
+                    }
+                    else if ( i < 0 )
+                    {
+                        numExt.curTabs[j].label = (-i) + numExt.numSeperator + "  " + doc;
+                    }
+                    else
+                    {
+                        numExt.curTabs[j].label = (i) + numExt.numSeperator + "  " + doc;
+                    }
+                    i--;
+                }
+            }
 		}
 	},
 	
@@ -406,6 +444,20 @@ var numExt =
 						alert('Please type either on/off to activate/desactive the NumExt Assistant');
 					}
 				break;
+
+                case "relative":
+					if (command[1] == 'on' || command[1] == 'off')
+					{
+						var numExtPrefAssist = Components.classes["@mozilla.org/preferences-service;1"].getService (Components.interfaces.nsIPrefService);
+						numExtPrefAssist  = numExtPrefAssist.getBranch ("extensions.numext.");
+						numExtPrefAssist.setCharPref("numRelativeNumbering", command[1]);
+					}
+					else
+					{
+						alert('Please type either on/off to activate/desactive the NumExt relative numbering.');
+					}
+				break;
+
 				
 				default:
 					if (confirm("The command you entered was ambigious... would you like to consult the help manual?")) 
@@ -526,6 +578,10 @@ var numExt =
 					case "assist":
 						assistantOutput = " 'assist' [turns on or off the NumExt command assistant] - Type 'assist off' to turn off this assitant and later 'assist on' to turn it back on.";
 					break;
+
+                    case "relative":
+						assistantOutput = " 'relative' [turns on or off relative numbering] - Type 'relative off' to turn off later 'relative on' to turn it back on.";
+					break;
 				}
 			}
 			parserCmd.setAttribute( 'value', 'NumExt (Assistant) :: ' + assistantOutput);
@@ -534,6 +590,7 @@ var numExt =
 }
 
 window.addEventListener("TabOpen", function () { window.setTimeout(numExt.init, 5); }, false);
+document.addEventListener("visibilitychange", function () { window.setTimeout(numExt.init, 5); }, false);
 window.addEventListener("TabClose", function () { window.setTimeout(numExt.init, 5); }, false);
 window.addEventListener("load", function () { gBrowser.addEventListener("load", function(){window.setTimeout(numExt.init, 5);}, true); }, true);
 window.addEventListener("load", function(e) { numExt.loadSett(); }, false); 
